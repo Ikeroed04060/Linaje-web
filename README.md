@@ -55,8 +55,8 @@ El sitio web forma parte del ecosistema digital de Linaje:
 ## 👤 Equipo
 
 Desarrollado por:
-Iker Edwin Santiago Solano Ruiz
-**Desarrollador Web**
+Iker Edwin Santiago Solano Ruiz.
+**Desarrollador Web.**
 
 ---
 
