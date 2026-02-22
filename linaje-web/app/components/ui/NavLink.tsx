@@ -19,8 +19,9 @@ export default function NavLink({
 }: NavLinkProps) {
   const [pressed, setPressed] = useState(false);
 
+  // CLAVE: inline-block + w-fit para que el subrayado mida solo el texto
   const base =
-    "uppercase tracking-[0.22em] transition-all duration-300 ease-out";
+    "inline-block w-fit uppercase tracking-[0.22em] transition-all duration-300 ease-out";
 
   const desktop =
     "relative text-xs text-[#6A6A6A] hover:text-[#1A1A1A] " +
