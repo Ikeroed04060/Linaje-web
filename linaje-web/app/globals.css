@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+body {
+  background-color: #F8F6F3;
+  color: #1F1F1F;
+}
+
+.hero-bg {
+  background-color: #f5ede8;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
