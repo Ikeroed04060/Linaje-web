@@ -31,27 +31,22 @@ export default function FeaturedCollection() {
       {
         name: "Linaje Pure",
         desc: "Nuestra línea íntima y delicada.",
-        imageSrc: "/collection/pure.jpeg",
+        imageSrc: "/collection/pure.png",
       },
     ],
     []
   );
 
   const [items, setItems] = useState<Item[]>(initialItems);
-
   const [paused, setPaused] = useState(false);
 
-  // animación
-  const DURATION_MS = 650;
-  const [intervalMs, setIntervalMs] = useState(3200);
+  // 🎯 Ajuste equilibrado
+  const DURATION_MS = 900;
+  const [intervalMs, setIntervalMs] = useState(4200);
 
-  // shift dinámico = ancho card + gap
   const [shiftPx, setShiftPx] = useState(380);
-
-  // buffer de cards a cada lado
   const [bufferCount, setBufferCount] = useState(2);
 
-  // control de animación
   const [animating, setAnimating] = useState(false);
   const [transitionOn, setTransitionOn] = useState(true);
   const [offsetPx, setOffsetPx] = useState(0);
@@ -60,18 +55,17 @@ export default function FeaturedCollection() {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const firstCardRef = useRef<HTMLElement | null>(null);
 
-  // velocidad distinta móvil/desktop
+  // 🎯 Velocidad equilibrada móvil/desktop
   useEffect(() => {
     const update = () => {
       const isMobile = window.matchMedia("(max-width: 767px)").matches;
-      setIntervalMs(isMobile ? 5200 : 3200);
+      setIntervalMs(isMobile ? 5600 : 4200);
     };
     update();
     window.addEventListener("resize", update, { passive: true });
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  // calcular shift y bufferCount
   useEffect(() => {
     const calc = () => {
       const viewport = viewportRef.current;
@@ -88,7 +82,6 @@ export default function FeaturedCollection() {
 
       setShiftPx(total);
 
-      // cuántas cards caben + margen (y mínimo 2)
       const visible = Math.ceil(viewport.clientWidth / total);
       setBufferCount(Math.max(2, visible + 1));
     };
@@ -103,32 +96,27 @@ export default function FeaturedCollection() {
     };
   }, []);
 
-  // lista render con buffer izquierda y derecha
   const renderItems = useMemo(() => {
     const left = items.slice(-bufferCount);
     const right = items.slice(0, bufferCount);
     return [...left, ...items, ...right];
   }, [items, bufferCount]);
 
-  // posición base: nos “paramos” después del buffer izquierdo
   const baseTranslate = -bufferCount * shiftPx;
 
   const goNext = () => {
     if (animating) return;
     setAnimating(true);
 
-    // animar a la izquierda (siguiente)
     setTransitionOn(true);
     setOffsetPx(baseTranslate - shiftPx);
 
     window.setTimeout(() => {
-      // rotar array (primero al final)
       setItems((prev) => {
         const [first, ...rest] = prev;
         return [...rest, first];
       });
 
-      // reset invisible a baseTranslate sin transición
       setTransitionOn(false);
       setOffsetPx(baseTranslate);
 
@@ -143,19 +131,16 @@ export default function FeaturedCollection() {
     if (animating) return;
     setAnimating(true);
 
-    // animar a la derecha (anterior)
     setTransitionOn(true);
     setOffsetPx(baseTranslate + shiftPx);
 
     window.setTimeout(() => {
-      // rotar array (último al inicio)
       setItems((prev) => {
         const copy = [...prev];
         const last = copy.pop()!;
         return [last, ...copy];
       });
 
-      // reset invisible a baseTranslate sin transición
       setTransitionOn(false);
       setOffsetPx(baseTranslate);
 
@@ -166,7 +151,6 @@ export default function FeaturedCollection() {
     }, DURATION_MS);
   };
 
-  // autoplay (siempre hacia la derecha -> goNext)
   useEffect(() => {
     const t = window.setInterval(() => {
       if (!paused) goNext();
@@ -220,7 +204,6 @@ export default function FeaturedCollection() {
           </div>
         </div>
 
-        {/* Viewport sin scroll */}
         <div
           ref={viewportRef}
           className="overflow-hidden"

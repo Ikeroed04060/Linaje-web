@@ -101,7 +101,7 @@ export default function Footer() {
 
               {/* WhatsApp (cambia el número) */}
               <a
-                href="https://wa.me/573000000000"
+                href="https://wa.me/573165316291"
                 target="_blank"
                 rel="noreferrer"
                 aria-label="WhatsApp"

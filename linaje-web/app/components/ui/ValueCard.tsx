@@ -4,9 +4,9 @@ import clsx from "clsx";
 type ValueCardProps = {
   title: string;
   description: string;
-  imageSrc?: string;          // opcional: "/values/esencia.jpg"
+  imageSrc?: string;
   imageAlt?: string;
-  active?: boolean;           // para “hover automático”
+  active?: boolean;
   className?: string;
 };
 
@@ -25,19 +25,18 @@ export default function ValueCard({
         relative overflow-hidden rounded-2xl
         border border-[#DDD3CA] bg-[#F8F6F3] p-8
         transition-all duration-500
-        hover:-translate-y-[3px]
-        hover:shadow-[0_16px_40px_rgba(107,92,78,0.14)]
+        hover:-translate-y-[4px]
+        hover:shadow-[0_22px_60px_rgba(214,197,178,0.95)]
         `,
         active &&
           `
-          -translate-y-[3px]
-          shadow-[0_16px_40px_rgba(107,92,78,0.16)]
-          border-[#6B5C4E]/60
+          -translate-y-[4px]
+          shadow-[0_22px_60px_rgba(214,197,178,1)]
+          border-[#6B5C4E]/70
           `,
         className
       )}
     >
-      {/* Imagen opcional de fondo */}
       {imageSrc && (
         <>
           <Image
@@ -47,15 +46,11 @@ export default function ValueCard({
             className="object-cover object-center saturate-90 contrast-95"
           />
 
-          {/* Velo beige para bajar brillo */}
           <div className="absolute inset-0 bg-[#F3ECE4]/78" />
-
-          {/* Toque editorial sutil */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#F3ECE4]/55" />
         </>
       )}
 
-      {/* Contenido */}
       <div className="relative">
         <h3 className="text-lg tracking-wide text-[#1A1A1A] mb-3">
           {title}
@@ -66,7 +61,6 @@ export default function ValueCard({
         </p>
       </div>
 
-      {/* Brillo suave solo cuando está activa */}
       <div
         className={clsx(
           "pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-700",
@@ -74,7 +68,7 @@ export default function ValueCard({
         )}
         style={{
           background:
-            "radial-gradient(circle at 20% 10%, rgba(107,92,78,0.18), transparent 55%)",
+            "radial-gradient(circle at 20% 10%, rgba(214,197,178,0.6), transparent 55%)",
         }}
       />
     </article>
