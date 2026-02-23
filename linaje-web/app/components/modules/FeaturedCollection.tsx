@@ -1,70 +1,179 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Button from "@/app/components/ui/button";
 
 type Item = {
   name: string;
   desc: string;
+  imageSrc: string;
 };
 
 export default function FeaturedCollection() {
   const initialItems: Item[] = useMemo(
     () => [
-      { name: "Linaje Wear", desc: "Prendas que representan tu esencia." },
-      { name: "Linaje ART", desc: "Arte pintado a mano sobre tela." },
-      { name: "Accesorios & Bolsos", desc: "Piezas tejidas con intención." },
-      { name: "Linaje Pure", desc: "Nuestra línea íntima y delicada." },
+      {
+        name: "Linaje Wear",
+        desc: "Prendas que representan tu esencia.",
+        imageSrc: "/collection/wear.jpeg",
+      },
+      {
+        name: "Linaje ART",
+        desc: "Arte pintado a mano sobre tela.",
+        imageSrc: "/collection/art.jpeg",
+      },
+      {
+        name: "Linaje Atelier",
+        desc: "Piezas fabricadas con intención.",
+        imageSrc: "/collection/atelier.jpeg",
+      },
+      {
+        name: "Linaje Pure",
+        desc: "Nuestra línea íntima y delicada.",
+        imageSrc: "/collection/pure.jpeg",
+      },
     ],
     []
   );
 
   const [items, setItems] = useState<Item[]>(initialItems);
+
   const [paused, setPaused] = useState(false);
+
+  // animación
+  const DURATION_MS = 650;
+  const [intervalMs, setIntervalMs] = useState(3200);
+
+  // shift dinámico = ancho card + gap
+  const [shiftPx, setShiftPx] = useState(380);
+
+  // buffer de cards a cada lado
+  const [bufferCount, setBufferCount] = useState(2);
+
+  // control de animación
   const [animating, setAnimating] = useState(false);
+  const [transitionOn, setTransitionOn] = useState(true);
+  const [offsetPx, setOffsetPx] = useState(0);
 
-  // Ajustes de “sensación”
-  const DURATION_MS = 650;  // duración animación
-  const INTERVAL_MS = 3200; // velocidad (más lento)
-  const SHIFT_PX = 380;     // “ancho” visual por tarjeta
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const firstCardRef = useRef<HTMLElement | null>(null);
 
-  const next = () => {
+  // velocidad distinta móvil/desktop
+  useEffect(() => {
+    const update = () => {
+      const isMobile = window.matchMedia("(max-width: 767px)").matches;
+      setIntervalMs(isMobile ? 5200 : 3200);
+    };
+    update();
+    window.addEventListener("resize", update, { passive: true });
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  // calcular shift y bufferCount
+  useEffect(() => {
+    const calc = () => {
+      const viewport = viewportRef.current;
+      const track = trackRef.current;
+      const first = firstCardRef.current;
+      if (!viewport || !track || !first) return;
+
+      const cardW = first.getBoundingClientRect().width;
+      const styles = window.getComputedStyle(track);
+      const gap = parseFloat(styles.gap || "0");
+      const total = cardW + gap;
+
+      if (!Number.isFinite(total) || total <= 0) return;
+
+      setShiftPx(total);
+
+      // cuántas cards caben + margen (y mínimo 2)
+      const visible = Math.ceil(viewport.clientWidth / total);
+      setBufferCount(Math.max(2, visible + 1));
+    };
+
+    calc();
+    window.addEventListener("resize", calc, { passive: true });
+    const t = window.setTimeout(calc, 300);
+
+    return () => {
+      window.removeEventListener("resize", calc);
+      window.clearTimeout(t);
+    };
+  }, []);
+
+  // lista render con buffer izquierda y derecha
+  const renderItems = useMemo(() => {
+    const left = items.slice(-bufferCount);
+    const right = items.slice(0, bufferCount);
+    return [...left, ...items, ...right];
+  }, [items, bufferCount]);
+
+  // posición base: nos “paramos” después del buffer izquierdo
+  const baseTranslate = -bufferCount * shiftPx;
+
+  const goNext = () => {
     if (animating) return;
     setAnimating(true);
 
-    // 1) animamos el track hacia la izquierda (para dar sensación de avanzar a la derecha)
-    // 2) cuando termina, rotamos el array y volvemos el track a 0 sin que se note
-    setTimeout(() => {
+    // animar a la izquierda (siguiente)
+    setTransitionOn(true);
+    setOffsetPx(baseTranslate - shiftPx);
+
+    window.setTimeout(() => {
+      // rotar array (primero al final)
       setItems((prev) => {
         const [first, ...rest] = prev;
         return [...rest, first];
       });
-      setAnimating(false);
+
+      // reset invisible a baseTranslate sin transición
+      setTransitionOn(false);
+      setOffsetPx(baseTranslate);
+
+      requestAnimationFrame(() => {
+        setTransitionOn(true);
+        setAnimating(false);
+      });
     }, DURATION_MS);
   };
 
-  const prev = () => {
+  const goPrev = () => {
     if (animating) return;
     setAnimating(true);
 
-    setTimeout(() => {
+    // animar a la derecha (anterior)
+    setTransitionOn(true);
+    setOffsetPx(baseTranslate + shiftPx);
+
+    window.setTimeout(() => {
+      // rotar array (último al inicio)
       setItems((prev) => {
         const copy = [...prev];
         const last = copy.pop()!;
         return [last, ...copy];
       });
-      setAnimating(false);
+
+      // reset invisible a baseTranslate sin transición
+      setTransitionOn(false);
+      setOffsetPx(baseTranslate);
+
+      requestAnimationFrame(() => {
+        setTransitionOn(true);
+        setAnimating(false);
+      });
     }, DURATION_MS);
   };
 
-  // Auto-play: siempre “hacia la derecha”
+  // autoplay (siempre hacia la derecha -> goNext)
   useEffect(() => {
-    const t = setInterval(() => {
-      if (!paused) next();
-    }, INTERVAL_MS);
+    const t = window.setInterval(() => {
+      if (!paused) goNext();
+    }, intervalMs);
 
-    return () => clearInterval(t);
-  }, [paused, animating]);
+    return () => window.clearInterval(t);
+  }, [paused, intervalMs, animating, baseTranslate, shiftPx]);
 
   return (
     <section className="px-6 py-24 bg-[#F8F6F3]">
@@ -91,16 +200,18 @@ export default function FeaturedCollection() {
 
           <div className="flex gap-2">
             <button
-              onClick={prev}
-              className="w-10 h-10 border border-[#1A1A1A] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white transition"
+              onClick={goPrev}
+              disabled={animating}
+              className="w-10 h-10 border border-[#1A1A1A] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white transition disabled:opacity-40"
               aria-label="Anterior"
               type="button"
             >
               ←
             </button>
             <button
-              onClick={next}
-              className="w-10 h-10 border border-[#1A1A1A] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white transition"
+              onClick={goNext}
+              disabled={animating}
+              className="w-10 h-10 border border-[#1A1A1A] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white transition disabled:opacity-40"
               aria-label="Siguiente"
               type="button"
             >
@@ -109,30 +220,47 @@ export default function FeaturedCollection() {
           </div>
         </div>
 
-        {/* Viewport (sin scrollbar) */}
+        {/* Viewport sin scroll */}
         <div
+          ref={viewportRef}
+          className="overflow-hidden"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
           onTouchStart={() => setPaused(true)}
           onTouchEnd={() => setPaused(false)}
-          className="overflow-hidden"
         >
-          {/* Track */}
           <div
-            className="flex gap-8"
+            ref={trackRef}
+            className="flex gap-8 w-max"
             style={{
-              transform: animating ? `translateX(-${SHIFT_PX}px)` : "translateX(0px)",
-              transition: animating ? `transform ${DURATION_MS}ms ease-in-out` : "none",
+              transform: `translate3d(${offsetPx || baseTranslate}px, 0, 0)`,
+              transition: transitionOn
+                ? `transform ${DURATION_MS}ms ease-in-out`
+                : "none",
               willChange: "transform",
             }}
           >
-            {/* Renderizamos 5 tarjetas para que el movimiento se sienta continuo */}
-            {[...items, items[0]].map((item, idx) => (
+            {renderItems.map((item, idx) => (
               <article
+                ref={
+                  idx === bufferCount
+                    ? (el) => {
+                        firstCardRef.current = el;
+                      }
+                    : undefined
+                }
                 key={`${item.name}-${idx}`}
                 className="min-w-[280px] sm:min-w-[320px] md:min-w-[360px]"
               >
-                <div className="h-[320px] bg-[#E7DDD3] mb-5" />
+                <div className="relative h-[320px] mb-5 overflow-hidden rounded-2xl">
+                  <Image
+                    src={item.imageSrc}
+                    alt={item.name}
+                    fill
+                    className="object-cover object-center"
+                  />
+                </div>
+
                 <h3 className="text-lg tracking-wide text-[#1A1A1A] mb-2">
                   {item.name}
                 </h3>

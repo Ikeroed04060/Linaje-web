@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import clsx from "clsx";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 type NavLinkProps = {
   href: string;
@@ -17,33 +17,36 @@ export default function NavLink({
   variant = "desktop",
   onClick,
 }: NavLinkProps) {
-  const [pressed, setPressed] = useState(false);
+  const pathname = usePathname();
 
-  // CLAVE: inline-block + w-fit para que el subrayado mida solo el texto
+  // Activo exacto. Si luego quieres “startsWith” (para subrutas), te lo ajusto.
+  const isActive = pathname === href;
+
   const base =
     "inline-block w-fit uppercase tracking-[0.22em] transition-all duration-300 ease-out";
 
-  const desktop =
-    "relative text-xs text-[#6A6A6A] hover:text-[#1A1A1A] " +
-    "after:absolute after:left-0 after:-bottom-1 after:h-px after:w-0 " +
-    "after:bg-[#6B5C4E] after:transition-all after:duration-300 " +
-    "hover:after:w-full";
+  const underlineBase =
+    "relative after:absolute after:left-0 after:-bottom-1 after:h-px after:bg-[#6B5C4E] " +
+    "after:transition-all after:duration-300";
 
-  const mobile = "text-xs text-[#6A6A6A] hover:text-[#1A1A1A]";
+  const desktop =
+    `${underlineBase} text-xs ` +
+    (isActive
+      ? "text-[#1A1A1A] after:w-full"
+      : "text-[#6A6A6A] after:w-0 hover:text-[#1A1A1A] hover:after:w-full");
+
+  const mobile =
+    `${underlineBase} text-xs ` +
+    (isActive
+      ? "text-[#1A1A1A] after:w-full"
+      : "text-[#6A6A6A] after:w-0 active:text-[#1A1A1A] active:after:w-full");
 
   return (
     <Link
       href={href}
       onClick={onClick}
-      onMouseDown={() => setPressed(true)}
-      onMouseUp={() => setPressed(false)}
-      onMouseLeave={() => setPressed(false)}
-      className={clsx(
-        base,
-        variant === "desktop" ? desktop : mobile,
-        pressed &&
-          "scale-95 text-[#1A1A1A] drop-shadow-[0_0_10px_rgba(107,92,78,0.35)]"
-      )}
+      className={clsx(base, variant === "desktop" ? desktop : mobile)}
+      aria-current={isActive ? "page" : undefined}
     >
       {children}
     </Link>
